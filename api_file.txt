@@ -1,7 +1,0 @@
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/http/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/http-post/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/httpdynamic/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/todo/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/star-wars/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/crud/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/context/main.go
