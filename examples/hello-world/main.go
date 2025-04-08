@@ -39,3 +39,21 @@
 // 	rJSON, _ := json.Marshal(r)
 // 	fmt.Printf("%s \n", rJSON) // {“data”:{“hello”:”world”}}
 // }
+
+/*
+Analyze this codebase and provide a list of all files that contain API endpoints. Ignore any code that has been commented.
+Examine all source code and identify any files that define routes, controllers, or API handlers. 
+Ignore any commented content.
+Don't limit your search to just routes files, also look at controller files or any file that might contain API endpoint definitions.
+Your response should include the file path for each file containing API endpoints.
+Format your response as a simple list of file paths, one per line, with no additional text.
+Save your response to a file named 'api_files.txt' in the current directory.
+
+Analyze this codebase and provide a list of all files that contain usable, uncommented API endpoints. Ignore any code that has been commented.                                                                                                         │
+Examine all source code and identify any files that define routes, controllers, or API handlers.                                                                                                                                                       │
+Ignore any commented content.                                                                                                                                                                                                                          │
+Don't limit your search to just routes files, also look at controller files or any file that might contain API endpoint definitions.                                                                                                                   │
+Your response should include the file path for each file containing API endpoints.                                                                                                                                                                     │
+Format your response as a simple list of file paths, one per line, with no additional text.                                                                                                                                                            │
+Save your response to a file named 'api_files.txt' in the current directory. 
+*/
