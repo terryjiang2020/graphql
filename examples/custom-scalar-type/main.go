@@ -9,6 +9,8 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 )
 
+import { something }
+
 type CustomID struct {
 	value string
 }
