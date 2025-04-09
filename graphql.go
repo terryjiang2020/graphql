@@ -106,6 +106,7 @@ func Do(p Params) *Result {
 	}
 
 	// notify extensions about the start of the execution
+	// notify extensions about the start of the execution
 	return Execute(ExecuteParams{
 		Schema:        p.Schema,
 		Root:          p.RootObject,
