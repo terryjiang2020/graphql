@@ -62,6 +62,7 @@ type Customer struct {
 	ID *CustomID `json:"id"`
 }
 
+
 var CustomerType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Customer",
 	Fields: graphql.Fields{
