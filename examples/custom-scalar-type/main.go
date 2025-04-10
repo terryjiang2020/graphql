@@ -60,6 +60,7 @@ var CustomScalarType = graphql.NewScalar(graphql.ScalarConfig{
 	},
 })
 
+
 type Customer struct {
 	ID *CustomID `json:"id"`
 }
