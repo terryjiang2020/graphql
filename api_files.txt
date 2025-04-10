@@ -1,5 +1,7 @@
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/star-wars/main.go
 /Users/jiangjiahao/Documents/GitHub/graphql/examples/httpdynamic/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/sql-nullstring/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/modify-context/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/concurrent-resolvers/main.go
-/Users/jiangjiahao/Documents/GitHub/graphql/examples/custom-scalar-type/main.go
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/http/main.go
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/http-post/main.go
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/crud/main.go
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/context/main.go
+/Users/jiangjiahao/Documents/GitHub/graphql/examples/todo/main.go

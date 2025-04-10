@@ -1,0 +1,122 @@
+# POST /graphql
+Source file: examples/http-post/main.go
+
+## Implementation
+This endpoint implements a GraphQL API server using the Go standard library's HTTP package. The endpoint receives GraphQL queries in a POST request, processes them using the graphql-go library, and returns the results as JSON.
+
+Key components:
+- The HTTP handler in `examples/http-post/main.go` parses the incoming JSON request body into a `postData` struct
+- The handler calls `graphql.Do()` to execute the GraphQL query against the schema
+- The schema defined in `examples/todo/schema/schema.go` provides a simple Todo application with CRUD operations
+- The schema defines a Todo type with fields: id, text, and done
+- The schema implements query operations (todo, lastTodo, todoList) and mutation operations (createTodo, updateTodo)
+
+## Input Format
+The endpoint accepts POST requests with a JSON body containing:
+
+- `query` (string, required): The GraphQL query string to execute
+- `operationName` (string, optional): Name of the operation to execute if the query contains multiple operations
+- `variables` (object, optional): Variables to use when executing the query
+
+Example structure:
+```json
+{
+  "query": "{ todoList { id text done } }",
+  "operationName": null,
+  "variables": {}
+}
+```
+
+## Output Format
+The endpoint returns a JSON response with the following structure:
+
+- `data` (object): Contains the requested data if the query is successful
+- `errors` (array, optional): Contains error details if any occurred during query execution
+
+HTTP Status Codes:
+- 200 OK: Returns either successful data or validation errors in the response
+- 400 Bad Request: If the JSON body cannot be parsed
+
+## Sample Input
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "{ todoList { id text done } }" }' \
+http://localhost:8080/graphql
+```
+
+Other sample queries demonstrated in the code:
+
+1. Get a single todo by ID:
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "{ todo(id:\"b\") { id text done } }" }' \
+http://localhost:8080/graphql
+```
+
+2. Create a new todo:
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "mutation { createTodo(text:\"My New todo\") { id text done } }" }' \
+http://localhost:8080/graphql
+```
+
+3. Update a todo:
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "mutation { updateTodo(id:\"a\", done: true) { id text done } }" }' \
+http://localhost:8080/graphql
+```
+
+## Sample Output
+For todoList query:
+```json
+{
+  "data": {
+    "todoList": [
+      {
+        "id": "a",
+        "text": "A todo not done",
+        "done": false
+      },
+      {
+        "id": "b",
+        "text": "A todo that is done",
+        "done": true
+      }
+    ]
+  }
+}
+```
+
+For a createTodo mutation:
+```json
+{
+  "data": {
+    "createTodo": {
+      "id": "xYzAbCdE",
+      "text": "My New todo",
+      "done": false
+    }
+  }
+}
+```
+
+For error scenarios:
+```json
+{
+  "errors": [
+    {
+      "message": "Cannot query field \"nonExistentField\" on type \"Todo\".",
+      "locations": [{"line": 1, "column": 10}]
+    }
+  ]
+}
+```
