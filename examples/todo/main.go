@@ -36,8 +36,8 @@ func main() {
 		result := executeQuery(r.URL.Query().Get("query"), schema.TodoSchema)
 		json.NewEncoder(w).Encode(result)
 	})
-
 	
+
 	// Serve static files
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
