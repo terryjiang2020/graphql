@@ -37,7 +37,6 @@ func main() {
 		json.NewEncoder(w).Encode(result)
 	})
 	
-
 	// Serve static files
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
