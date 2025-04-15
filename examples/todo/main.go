@@ -16,6 +16,12 @@ func init() {
 	todo2 := schema.Todo{ID: "b", Text: "This is the most important", Done: false}
 	todo3 := schema.Todo{ID: "c", Text: "Please do this or else", Done: false}
 	schema.TodoList = append(schema.TodoList, todo1, todo2, todo3)
+	
+	// Initialize some users
+	admin := schema.User{ID: "admin1", Username: "admin", Password: "admin123", IsAdmin: true}
+	user1 := schema.User{ID: "user1", Username: "user1", Password: "password1", IsAdmin: false}
+	user2 := schema.User{ID: "user2", Username: "user2", Password: "password2", IsAdmin: false}
+	schema.UserList = append(schema.UserList, admin, user1, user2)
 
 	rand.Seed(time.Now().UnixNano())
 }
@@ -45,6 +51,7 @@ func main() {
 	fmt.Println("Create new todo: curl -g 'http://localhost:8080/graphql?query=mutation+_{createTodo(text:\"My+new+todo\"){id,text,done}}'")
 	fmt.Println("Update todo: curl -g 'http://localhost:8080/graphql?query=mutation+_{updateTodo(id:\"a\",done:true){id,text,done}}'")
 	fmt.Println("Load todo list: curl -g 'http://localhost:8080/graphql?query={todoList{id,text,done}}'")
+	fmt.Println("Update user password (admin only): curl -g 'http://localhost:8080/graphql?query=mutation+_{updateUserPassword(adminId:\"admin1\",userId:\"user1\",newPassword:\"newpass123\"){id,username,isAdmin}}'")
 	fmt.Println("Access the web app via browser at 'http://localhost:8080'")
 
 	http.ListenAndServe(":8080", nil)
