@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>ToDo</title>
+  <title>ToDo App</title>
   <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" media="all" href="/assets/css/style.css">
 </head>
@@ -12,34 +12,73 @@
 
   <div class="container">
 
-    <h1>ToDo</h1>
-
-    <div class="todo-list">
-      <h2>Tasks</h2>
-      <div class="todo-list-container">
-        
-        <div class=""></div>
-
+    <h1>ToDo App</h1>
+    
+    <!-- Authentication Forms -->
+    <div class="auth-forms" style="display: none;">
+      <!-- Login Form -->
+      <div class="login-form">
+        <h2>Login</h2>
+        <form>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" placeholder="Your email" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" placeholder="Your password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p class="mt-3">Don't have an account? <a href="#" class="show-signup">Sign up</a></p>
       </div>
-    </div><!-- /.todo-list -->
-
-    <div class="todo-add">
       
-      <h2>Add task</h2>
+      <!-- Signup Form -->
+      <div class="signup-form" style="display: none;">
+        <h2>Sign Up</h2>
+        <form>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" placeholder="Your email" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" placeholder="Your password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+        <p class="mt-3">Already have an account? <a href="#" class="show-login">Login</a></p>
+      </div>
+    </div>
+    
+    <!-- Todo Interface -->
+    <div class="todo-interface">
+      <div class="user-info">
+        <p>Logged in as: <span class="user-email"></span> <a href="#" class="logout-btn">(Logout)</a></p>
+      </div>
 
-      <form class="todo-add-form">
-        <div class="form-group">
-          <input 
-            type="text" 
-            name="task" 
-            id="task" 
-            placeholder="Your task"
-            class="form-control">
+      <div class="todo-list">
+        <h2>Tasks</h2>
+        <div class="todo-list-container">
+          <div class=""></div>
         </div>
-        <button class="btn btn-primary">Add</button>
-      </form>
+      </div><!-- /.todo-list -->
 
-    </div><!-- /.todo-add -->
+      <div class="todo-add">
+        <h2>Add task</h2>
+        <form class="todo-add-form">
+          <div class="form-group">
+            <input 
+              type="text" 
+              name="task" 
+              id="task" 
+              placeholder="Your task"
+              class="form-control">
+          </div>
+          <button class="btn btn-primary">Add</button>
+        </form>
+      </div><!-- /.todo-add -->
+    </div><!-- /.todo-interface -->
 
   </div><!-- /.container -->
 
