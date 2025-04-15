@@ -3,15 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/examples/todo/schema"
+	"github.com/joho/godotenv"
 )
 
 func init() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: Error loading .env file:", err)
+	}
+	
 	todo1 := schema.Todo{ID: "a", Text: "A todo not to forget", Done: false}
 	todo2 := schema.Todo{ID: "b", Text: "This is the most important", Done: false}
 	todo3 := schema.Todo{ID: "c", Text: "Please do this or else", Done: false}
@@ -45,6 +52,9 @@ func main() {
 	fmt.Println("Create new todo: curl -g 'http://localhost:8080/graphql?query=mutation+_{createTodo(text:\"My+new+todo\"){id,text,done}}'")
 	fmt.Println("Update todo: curl -g 'http://localhost:8080/graphql?query=mutation+_{updateTodo(id:\"a\",done:true){id,text,done}}'")
 	fmt.Println("Load todo list: curl -g 'http://localhost:8080/graphql?query={todoList{id,text,done}}'")
+	fmt.Println("GitLab login with password: curl -g 'http://localhost:8080/graphql?query=mutation+_{gitlabLogin(username:\"user\",password:\"pass\"){id,username,sessionToken}}'")
+	fmt.Println("GitLab login with token: curl -g 'http://localhost:8080/graphql?query=mutation+_{gitlabLogin(username:\"user\",token:\"gitlabtoken\"){id,username,sessionToken}}'")
+	fmt.Println("Get current user: curl -g 'http://localhost:8080/graphql?query={currentUser(sessionToken:\"token\"){id,username}}'")
 	fmt.Println("Access the web app via browser at 'http://localhost:8080'")
 
 	http.ListenAndServe(":8080", nil)
