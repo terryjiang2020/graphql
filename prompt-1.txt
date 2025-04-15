@@ -1,0 +1,145 @@
+Sample API:
+
+// controllers/authentication/gitlab.js START
+export const gitlabLogin = (code) => {
+    console.log('gitlabLogin is triggered');
+    console.log('code: ', code);
+
+    const query = `
+        SELECT u.id, u.email, u.name, u.role
+        FROM Users u
+        WHERE u.gitlab_id = $1
+        AND u.deleted = false;
+    `;
+
+    const insert_query = `
+        INSERT INTO Users(gitlab_id, email, name, role, created_at)
+        VALUES($1, $2, $3, 'user', NOW())
+        RETURNING id, email, name, role;
+    `;
+
+    return axios.post('https://gitlab.com/oauth/token', {
+        client_id: config.GITLAB_CLIENT_ID,
+        client_secret: config.GITLAB_CLIENT_SECRET,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: config.GITLAB_REDIRECT_URI
+    })
+    .then(response => {
+        const access_token = response.data.access_token;
+        
+        return axios.get('https://gitlab.com/api/v4/user', {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        })
+        .then(userResponse => {
+            const gitlabId = userResponse.data.id;
+            const email = userResponse.data.email;
+            const name = userResponse.data.name;
+            
+            const values = [gitlabId];
+            
+            return pool.query(query, values)
+            .then(r => {
+                if (r.rowCount) {
+                    // User exists, return user data
+                    const user = r.rows[0];
+                    return generateJWT(user);
+                } else {
+                    // User doesn't exist, create new user
+                    const insert_values = [gitlabId, email, name];
+                    
+                    return pool.query(insert_query, insert_values)
+                    .then(i => {
+                        if (i.rowCount) {
+                            const newUser = i.rows[0];
+                            return generateJWT(newUser);
+                        }
+                        throw 500;
+                    })
+                    .catch(err => {
+                        console.error('insert_query failed, error: ', err);
+                        throw typeof err === 'number' ? err : 500;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('query failed, error: ', err);
+                throw typeof err === 'number' ? err : 500;
+            });
+        })
+        .catch(err => {
+            console.error('Failed to get GitLab user data: ', err);
+            throw 500;
+        });
+    })
+    .catch(err => {
+        console.error('Failed to get GitLab access token: ', err);
+        throw 500;
+    });
+}
+// controllers/authentication/gitlab.js END
+
+// services/auth.js START
+
+router.get('/gitlab/callback', async (request, response) => {
+    console.log('api: GET /auth/gitlab/callback');
+    
+    const code = request.query.code;
+    
+    if (!code) {
+        return generalApiErrorHandler(
+            response,
+            {
+                status: 400,
+                message: "Authorization code is required"
+            }
+        );
+    }
+    
+    auth.gitlabLogin(code)
+    .then((token) => {
+        generalApiResponseSender(response, { token });
+    })
+    .catch((err) => {
+        generalApiErrorHandler(response, err);
+    });
+});
+
+// services/auth.js END
+
+The APIs in this repo share the structure like this:
+
+Endpoints in services/**.js
+
+Data processing in controllers/**.js
+
+Data structure in init.sql
+
+When modifying or creating APIs, ensure you have checked and changed all relevant files mentioned above.
+
+Do not add or install any new libraries. Use the existing libraries we have.
+
+Do not change anything that is not related.
+
+Your task: 
+
+Implement GitLab authentication in the GraphQL API to allow users to log in with their GitLab credentials.
+
+Here are the relevant files:
+- examples/todo/main.go
+- examples/todo/schema/schema.go
+
+Targeted API Path: /graphql
+
+Targeted API Method: GET
+
+Here is the conversation history for clarification:
+
+assistant: All required information has been received. Continue programming.
+system: Message approved and sent for processing.
+
+Message Analysis:
+- Conversation Length: 2 messages
+- Implementation Context: Based on the conversation history, this appears to be a request to implement GitLab authentication in the GraphQL API

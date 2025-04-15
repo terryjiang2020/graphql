@@ -1,17 +1,26 @@
 package schema
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/graphql-go/graphql"
 )
 
 var TodoList []Todo
+var UserList []User
 
 type Todo struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 	Done bool   `json:"done"`
+}
+
+type User struct {
+	ID          string `json:"id"`
+	Username    string `json:"username"`
+	Token       string `json:"token"`
+	SessionToken string `json:"sessionToken"`
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -43,10 +52,88 @@ var todoType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+// define custom GraphQL ObjectType for our User struct
+var userType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "User",
+	Fields: graphql.Fields{
+		"id": &graphql.Field{
+			Type: graphql.String,
+		},
+		"username": &graphql.Field{
+			Type: graphql.String,
+		},
+		"sessionToken": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
 // root mutation
 var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootMutation",
 	Fields: graphql.Fields{
+		/*
+			curl -g 'http://localhost:8080/graphql?query=mutation+_{gitlabLogin(username:"user",password:"pass"){id,username,sessionToken}}'
+		*/
+		"gitlabLogin": &graphql.Field{
+			Type:        userType,
+			Description: "Login with GitLab credentials",
+			Args: graphql.FieldConfigArgument{
+				"username": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+				"password": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+				"token": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				username, _ := params.Args["username"].(string)
+				password, passwordOK := params.Args["password"].(string)
+				token, tokenOK := params.Args["token"].(string)
+
+				// Check if user provided password or token
+				if !passwordOK && !tokenOK {
+					return nil, fmt.Errorf("either password or token must be provided")
+				}
+
+				// In a real implementation, this would validate credentials against GitLab API
+				// For demonstration, we'll create a new user or return existing user
+
+				// Generate a session token
+				sessionToken := RandStringRunes(32)
+				
+				// Check if user already exists
+				for i, user := range UserList {
+					if user.Username == username {
+						// Update session token
+						UserList[i].SessionToken = sessionToken
+						if tokenOK {
+							UserList[i].Token = token
+						}
+						return UserList[i], nil
+					}
+				}
+
+				// Create new user
+				newID := RandStringRunes(8)
+				newUser := User{
+					ID:          newID,
+					Username:    username,
+					SessionToken: sessionToken,
+				}
+				
+				if tokenOK {
+					newUser.Token = token
+				}
+
+				UserList = append(UserList, newUser)
+				return newUser, nil
+			},
+		},
+		
 		/*
 			curl -g 'http://localhost:8080/graphql?query=mutation+_{createTodo(text:"My+new+todo"){id,text,done}}'
 		*/
@@ -127,6 +214,30 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",
 	Fields: graphql.Fields{
+		/*
+		   curl -g 'http://localhost:8080/graphql?query={currentUser(sessionToken:"token"){id,username}}'
+		*/
+		"currentUser": &graphql.Field{
+			Type:        userType,
+			Description: "Get current authenticated user",
+			Args: graphql.FieldConfigArgument{
+				"sessionToken": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				tokenQuery, _ := params.Args["sessionToken"].(string)
+				
+				// Search for user with matching session token
+				for _, user := range UserList {
+					if user.SessionToken == tokenQuery {
+						return user, nil
+					}
+				}
+				
+				return nil, fmt.Errorf("invalid session token")
+			},
+		},
 
 		/*
 		   curl -g 'http://localhost:8080/graphql?query={todo(id:"b"){id,text,done}}'

@@ -1,0 +1,34 @@
+[
+  {
+    "method": "POST",
+    "path": "/graphql",
+    "filePath": "examples/http-post/main.go",
+    "allFilePaths": [
+      "examples/http-post/main.go"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/graphql",
+    "filePath": "examples/http/main.go",
+    "allFilePaths": [
+      "examples/http/main.go"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/graphql2",
+    "filePath": "examples/httpdynamic/main.go",
+    "allFilePaths": [
+      "examples/httpdynamic/main.go"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/graphql",
+    "filePath": "examples/todo/main.go",
+    "allFilePaths": [
+      "examples/todo/main.go"
+    ]
+  }
+]
