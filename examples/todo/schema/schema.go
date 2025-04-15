@@ -1,17 +1,26 @@
 package schema
 
 import (
+	"errors"
 	"math/rand"
 
 	"github.com/graphql-go/graphql"
 )
 
 var TodoList []Todo
+var UserList []User
 
 type Todo struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 	Done bool   `json:"done"`
+}
+
+type User struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	IsAdmin  bool   `json:"isAdmin"`
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -38,6 +47,22 @@ var todoType = graphql.NewObject(graphql.ObjectConfig{
 			Type: graphql.String,
 		},
 		"done": &graphql.Field{
+			Type: graphql.Boolean,
+		},
+	},
+})
+
+// define custom GraphQL ObjectType for our User struct
+var userType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "User",
+	Fields: graphql.Fields{
+		"id": &graphql.Field{
+			Type: graphql.String,
+		},
+		"username": &graphql.Field{
+			Type: graphql.String,
+		},
+		"isAdmin": &graphql.Field{
 			Type: graphql.Boolean,
 		},
 	},
@@ -117,6 +142,69 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 				return affectedTodo, nil
 			},
 		},
+		/*
+			curl -g 'http://localhost:8080/graphql?query=mutation+_{updateUserPassword(adminId:"admin1",userId:"user1",newPassword:"newpass123"){id,username,isAdmin}}'
+		*/
+		"updateUserPassword": &graphql.Field{
+			Type:        userType,
+			Description: "Update user password (admin only)",
+			Args: graphql.FieldConfigArgument{
+				"adminId": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+					Description: "ID of the admin user performing the action",
+				},
+				"userId": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+					Description: "ID of the user whose password will be changed",
+				},
+				"newPassword": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+					Description: "New password for the user",
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				adminId, _ := params.Args["adminId"].(string)
+				userId, _ := params.Args["userId"].(string)
+				newPassword, _ := params.Args["newPassword"].(string)
+				
+				// Verify admin privileges
+				var adminUser User
+				adminFound := false
+				for _, user := range UserList {
+					if user.ID == adminId {
+						adminUser = user
+						adminFound = true
+						break
+					}
+				}
+				
+				if !adminFound {
+					return nil, errors.New("admin user not found")
+				}
+				
+				if !adminUser.IsAdmin {
+					return nil, errors.New("insufficient privileges: user is not an admin")
+				}
+				
+				// Find and update the target user
+				var updatedUser User
+				userFound := false
+				for i := 0; i < len(UserList); i++ {
+					if UserList[i].ID == userId {
+						UserList[i].Password = newPassword
+						updatedUser = UserList[i]
+						userFound = true
+						break
+					}
+				}
+				
+				if !userFound {
+					return nil, errors.New("target user not found")
+				}
+				
+				return updatedUser, nil
+			},
+		},
 	},
 })
 
@@ -171,6 +259,29 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 			Description: "List of todos",
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				return TodoList, nil
+			},
+		},
+		/*
+		   curl -g 'http://localhost:8080/graphql?query={user(id:"admin1"){id,username,isAdmin}}'
+		*/
+		"user": &graphql.Field{
+			Type:        userType,
+			Description: "Get single user",
+			Args: graphql.FieldConfigArgument{
+				"id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				idQuery, isOK := params.Args["id"].(string)
+				if isOK {
+					for _, user := range UserList {
+						if user.ID == idQuery {
+							return user, nil
+						}
+					}
+				}
+				return nil, errors.New("user not found")
 			},
 		},
 	},
