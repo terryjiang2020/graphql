@@ -163,14 +163,6 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 
-		"firstTodo": &graphql.Field{
-			Type:        todoType,
-			Description: "First todo added",
-			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-				return TodoList[0], nil
-			},
-		},
-
 		/*
 		   curl -g 'http://localhost:8080/graphql?query={todoList{id,text,done}}'
 		*/

@@ -9,8 +9,6 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 )
 
-import { something }
-
 type CustomID struct {
 	value string
 }
@@ -60,12 +58,9 @@ var CustomScalarType = graphql.NewScalar(graphql.ScalarConfig{
 	},
 })
 
-
 type Customer struct {
 	ID *CustomID `json:"id"`
 }
-
-
 
 var CustomerType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Customer",
