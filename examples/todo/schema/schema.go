@@ -1,10 +1,18 @@
 package schema
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"os"
+	"time"
 
 	"github.com/graphql-go/graphql"
+	"github.com/joho/godotenv"
 )
 
 var TodoList []Todo
@@ -17,10 +25,13 @@ type Todo struct {
 }
 
 type User struct {
-	ID          string `json:"id"`
-	Username    string `json:"username"`
-	Token       string `json:"token"`
-	SessionToken string `json:"sessionToken"`
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	Token         string `json:"token"`
+	SessionToken  string `json:"sessionToken"`
+	Email         string `json:"email"`
+	GitlabID      int    `json:"gitlabID"`
+	AvatarURL     string `json:"avatarURL"`
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -31,6 +42,99 @@ func RandStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+// getGitLabToken gets an OAuth token from GitLab API using password grant type
+func getGitLabToken(baseURL, clientID, clientSecret, username, password string) (string, error) {
+	// Build the token request URL
+	tokenURL := fmt.Sprintf("%s/oauth/token", baseURL)
+	
+	// Create the request body
+	requestBody := map[string]string{
+		"grant_type":    "password",
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"username":      username,
+		"password":      password,
+		"scope":         "api read_user",
+	}
+	
+	// Convert request body to JSON
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", err
+	}
+	
+	// Make the HTTP request
+	req, err := http.NewRequest("POST", tokenURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+	
+	req.Header.Set("Content-Type", "application/json")
+	
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	
+	// Check for successful response
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return "", fmt.Errorf("failed to get token, status: %d, response: %s", resp.StatusCode, string(body))
+	}
+	
+	// Parse the response
+	var tokenResponse struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		ExpiresIn   int    `json:"expires_in"`
+	}
+	
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return "", err
+	}
+	
+	return tokenResponse.AccessToken, nil
+}
+
+// getGitLabUserInfo gets user information from GitLab API using an access token
+func getGitLabUserInfo(baseURL, accessToken string) (map[string]interface{}, error) {
+	// Build the user info request URL
+	userInfoURL := fmt.Sprintf("%s/user", baseURL)
+	
+	// Create the HTTP request
+	req, err := http.NewRequest("GET", userInfoURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Set the authorization header
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	
+	// Make the HTTP request
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	
+	// Check for successful response
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get user info, status: %d, response: %s", resp.StatusCode, string(body))
+	}
+	
+	// Parse the response
+	var userInfo map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		return nil, err
+	}
+	
+	return userInfo, nil
 }
 
 // define custom GraphQL ObjectType `todoType` for our Golang struct `Todo`
@@ -65,6 +169,15 @@ var userType = graphql.NewObject(graphql.ObjectConfig{
 		"sessionToken": &graphql.Field{
 			Type: graphql.String,
 		},
+		"email": &graphql.Field{
+			Type: graphql.String,
+		},
+		"gitlabID": &graphql.Field{
+			Type: graphql.Int,
+		},
+		"avatarURL": &graphql.Field{
+			Type: graphql.String,
+		},
 	},
 })
 
@@ -90,6 +203,23 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 				},
 			},
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				// Load environment variables from .env file
+				if err := godotenv.Load(); err != nil {
+					return nil, fmt.Errorf("error loading .env file: %v", err)
+				}
+
+				// Get GitLab API credentials from environment variables
+				gitlabAPIURL := os.Getenv("GITLAB_API_URL")
+				if gitlabAPIURL == "" {
+					gitlabAPIURL = "https://gitlab.com/api/v4" // Default GitLab API URL
+				}
+				clientID := os.Getenv("GITLAB_CLIENT_ID")
+				clientSecret := os.Getenv("GITLAB_CLIENT_SECRET")
+				
+				if clientID == "" || clientSecret == "" {
+					return nil, fmt.Errorf("missing GitLab credentials in environment variables")
+				}
+
 				username, _ := params.Args["username"].(string)
 				password, passwordOK := params.Args["password"].(string)
 				token, tokenOK := params.Args["token"].(string)
@@ -99,20 +229,47 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 					return nil, fmt.Errorf("either password or token must be provided")
 				}
 
-				// In a real implementation, this would validate credentials against GitLab API
-				// For demonstration, we'll create a new user or return existing user
+				var userInfo map[string]interface{}
+				var accessToken string
+				var err error
 
-				// Generate a session token
+				if tokenOK {
+					// Use provided personal access token
+					accessToken = token
+					// Get user info using the token
+					userInfo, err = getGitLabUserInfo(gitlabAPIURL, accessToken)
+				} else {
+					// Request OAuth token using password grant type
+					accessToken, err = getGitLabToken(gitlabAPIURL, clientID, clientSecret, username, password)
+					if err != nil {
+						return nil, fmt.Errorf("gitlab authentication failed: %v", err)
+					}
+					// Get user info using the obtained token
+					userInfo, err = getGitLabUserInfo(gitlabAPIURL, accessToken)
+				}
+
+				if err != nil {
+					return nil, fmt.Errorf("failed to get user info: %v", err)
+				}
+
+				// Generate a session token for our app
 				sessionToken := RandStringRunes(32)
+				
+				// Extract user information from GitLab response
+				gitlabID := int(userInfo["id"].(float64))
+				gitlabUsername := userInfo["username"].(string)
+				email := userInfo["email"].(string)
+				avatarURL := userInfo["avatar_url"].(string)
 				
 				// Check if user already exists
 				for i, user := range UserList {
-					if user.Username == username {
-						// Update session token
+					if user.GitlabID == gitlabID {
+						// Update user information and session token
 						UserList[i].SessionToken = sessionToken
-						if tokenOK {
-							UserList[i].Token = token
-						}
+						UserList[i].Token = accessToken
+						UserList[i].Username = gitlabUsername
+						UserList[i].Email = email
+						UserList[i].AvatarURL = avatarURL
 						return UserList[i], nil
 					}
 				}
@@ -120,13 +277,13 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 				// Create new user
 				newID := RandStringRunes(8)
 				newUser := User{
-					ID:          newID,
-					Username:    username,
+					ID:           newID,
+					Username:     gitlabUsername,
+					Token:        accessToken,
 					SessionToken: sessionToken,
-				}
-				
-				if tokenOK {
-					newUser.Token = token
+					Email:        email,
+					GitlabID:     gitlabID,
+					AvatarURL:    avatarURL,
 				}
 
 				UserList = append(UserList, newUser)

@@ -3,15 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/examples/todo/schema"
+	"github.com/joho/godotenv"
 )
 
 func init() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: Error loading .env file:", err)
+	}
+	
 	todo1 := schema.Todo{ID: "a", Text: "A todo not to forget", Done: false}
 	todo2 := schema.Todo{ID: "b", Text: "This is the most important", Done: false}
 	todo3 := schema.Todo{ID: "c", Text: "Please do this or else", Done: false}
