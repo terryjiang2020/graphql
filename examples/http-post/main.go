@@ -36,7 +36,7 @@ func main() {
 
 	fmt.Println("Now server is running on port 8080")
 
-	fmt.Println("")
+	fmt.Println("Confirmed graphql server is running")
 
 	fmt.Println(`Get single todo:
 curl \
