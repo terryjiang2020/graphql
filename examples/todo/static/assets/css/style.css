@@ -7,3 +7,28 @@ body {
 .todo-done {
     opacity: 0.5;
 }
+
+.auth-forms {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.todo-interface {
+    background: #fff;
+    border-radius: 5px;
+    padding: 20px;
+}
+
+.user-info {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.logout-btn {
+    color: #d9534f;
+}
