@@ -1,2 +1,0 @@
-examples/http-post/main.go
-examples/todo/schema/schema.go
